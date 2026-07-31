@@ -1,0 +1,18 @@
+[project]
+name = "orion-framework"
+version = "2.0.0"
+description = "AI-driven CTEM & vulnerability orchestration framework"
+requires-python = ">=3.11"
+dependencies = ["aiosqlite>=0.19", "aiohttp>=3.9", "psutil>=5.9", "rich>=13.0"]
+
+[project.optional-dependencies]
+distributed = ["redis>=5.0"]
+dev = ["pytest>=8.0"]
+
+[project.scripts]
+orion = "orion.main:main"
+orion-master = "orion.dist.cli:master_main"
+orion-worker = "orion.dist.cli:worker_main"
+
+[tool.setuptools.packages.find]
+include = ["orion*"]

@@ -1,0 +1,10 @@
+aiosqlite>=0.19,<1.0      # async SQLite state store
+aiohttp>=3.9,<4.0         # async HTTP (tool client, LLM providers, notifiers)
+psutil>=5.9,<7.0          # RAM/CPU-derived concurrency governor
+rich>=13.0               # tactical CLI banner + styled output
+
+# --- v2.0 distributed mode (optional) ---
+redis>=5.0               # RedisBroker for multi-node master/worker (InMemoryBroker needs nothing)
+
+# --- dev / testing ---
+# pytest>=8.0            # run: pip install pytest && pytest tests/

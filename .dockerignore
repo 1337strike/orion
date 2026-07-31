@@ -1,0 +1,11 @@
+.venv/
+__pycache__/
+*.pyc
+.pytest_cache/
+.git/
+*.db
+*.db-wal
+*.db-shm
+.orion/
+scope.json
+.env

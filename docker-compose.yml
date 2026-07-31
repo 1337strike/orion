@@ -1,0 +1,83 @@
+# docker-compose.yml — Orion v2.0 distributed stack
+#
+# Layout for a single 16 GB Linux host:
+#   * redis   — the message broker (memory-capped so it can't run away)
+#   * worker  — stateless task executors; scale with --scale worker=N
+#   * master  — one-shot dispatcher/planner (run on demand via the "master" profile)
+#
+# Budget on 16 GB: redis ~0.5 GB + 4 workers x 2 GB = ~8.5 GB, leaving headroom
+# for the host, a local LLM (Ollama), and the master. Bump --scale carefully.
+#
+# Usage:
+#   docker compose up -d --scale worker=4          # bring up broker + 4 workers
+#   docker compose --profile master run --rm master \
+#       orion-master --target acme.com --scope /work/scope.json
+#
+services:
+  redis:
+    image: redis:7-alpine
+    command: >
+      redis-server
+      --maxmemory 512mb
+      --maxmemory-policy noeviction
+      --appendonly yes
+    volumes:
+      - redis-data:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 3s
+      retries: 5
+    deploy:
+      resources:
+        limits:
+          memory: 640M
+    restart: unless-stopped
+
+  worker:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    command: >
+      orion-worker
+      --redis-url redis://redis:6379/0
+      --scope /work/scope.json
+      --concurrency 4
+      --profile-strategy sticky_host
+    environment:
+      ORION_ENGAGEMENT_ID: "${ORION_ENGAGEMENT_ID:-}"
+      ORION_DISCORD_WEBHOOK: "${ORION_DISCORD_WEBHOOK:-}"
+    volumes:
+      - ./scope.json:/work/scope.json:ro     # in-scope targets (read-only)
+      - orion-data:/root/.orion              # shared state / results
+    depends_on:
+      redis:
+        condition: service_healthy
+    deploy:
+      resources:
+        limits:
+          memory: 2G                          # per-worker cap
+    restart: unless-stopped
+
+  master:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    profiles: ["master"]                       # not started by default
+    environment:
+      ORION_DISCORD_WEBHOOK: "${ORION_DISCORD_WEBHOOK:-}"
+    volumes:
+      - ./scope.json:/work/scope.json:ro
+      - orion-data:/root/.orion
+    depends_on:
+      redis:
+        condition: service_healthy
+    deploy:
+      resources:
+        limits:
+          memory: 1G                          # master is coordination-only
+    restart: "no"
+
+volumes:
+  redis-data:
+  orion-data:

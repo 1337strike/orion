@@ -1,0 +1,7 @@
+{
+  "authorized_by": "ACME Public Bug Bounty (HackerOne handle: acme)",
+  "authorized_at": "2026-07-31",
+  "in_scope": ["acme.com", "*.acme.com", "api.acme.io"],
+  "out_of_scope": ["blog.acme.com", "*.corp.acme.com", "10.0.0.0/8"],
+  "allow_private_ranges": false
+}
